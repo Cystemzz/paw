@@ -2,6 +2,8 @@
     <img alt="Paw" src="logo/paw.png" height="128" />
 </div>
 
+Modified version of paw to assist in privacy, all outbound connections have been removed.
+
 # Paw
 
 Paw is a cross platform application to manage your passwords and identities securely.
