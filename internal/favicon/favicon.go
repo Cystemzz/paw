@@ -5,12 +5,7 @@ import (
 	"context"
 	"fmt"
 	"image"
-	"image/draw"
 	"net/http"
-	"sort"
-	"sync"
-	"time"
-
 	// Imports required to decode favicon images
 	_ "image/png"
 
@@ -53,85 +48,5 @@ type Options struct {
 // 	Service: ddg,
 // })
 func Download(ctx context.Context, host string, opts Options) (image.Image, error) {
-	minSize := opts.MinSize
-	forceMinSize := opts.ForceMinSize
-	if minSize <= 0 {
-		minSize = defaultMinSize
-	}
-	client := opts.Client
-	if client == nil {
-		client = http.DefaultClient
-		client.Timeout = 10 * time.Second
-	}
-
-	urls := []string{
-		fmt.Sprintf("http://%s/apple-touch-icon.png", host),
-		fmt.Sprintf("http://%s/favicon.ico", host),
-		fmt.Sprintf("http://%s/favicon.png", host),
-	}
-
-	service := opts.Service
-	if service != nil {
-		urls = []string{service(host)}
-	}
-
-	var result []image.Image
-	wg := &sync.WaitGroup{}
-	for _, url := range urls {
-		url := url
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			img, err := download(ctx, client, url)
-			if err != nil {
-				return
-			}
-			result = append(result, img)
-		}()
-	}
-	wg.Wait()
-
-	if result == nil {
-		return nil, fmt.Errorf("could not found any favicon at default locations")
-	}
-
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Bounds().Dx() > result[j].Bounds().Dx()
-	})
-
-	var out image.Image
-	out = result[0]
-	if minSize > out.Bounds().Dx() {
-		if !forceMinSize {
-			return nil, fmt.Errorf("min size required %dx%d, found icon %dx%d", minSize, minSize, out.Bounds().Dx(), out.Bounds().Dy())
-		}
-		m := image.NewRGBA(image.Rect(0, 0, minSize, minSize))
-
-		p := (minSize - out.Bounds().Dx()) / 2
-		dp := image.Point{p, p}
-
-		draw.Draw(m, m.Bounds(), image.Transparent, image.Point{}, draw.Src)
-		r := image.Rectangle{dp, dp.Add(out.Bounds().Size())}
-		draw.Draw(m, r, out, out.Bounds().Min, draw.Src)
-		out = m
-	}
-
-	return out, nil
-}
-
-func download(ctx context.Context, client *http.Client, url string) (image.Image, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("could not create HTTP request: %w", err)
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("could not fetch favicon: %w", err)
-	}
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("could not fetch favicon: %s", res.Status)
-	}
-	defer res.Body.Close()
-	img, _, err := image.Decode(res.Body)
-	return img, err
+	return nil, fmt.Errorf("could not found any favicon at default locations")
 }
